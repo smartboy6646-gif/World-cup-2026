@@ -43,6 +43,7 @@
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
         }
 
         header {
@@ -113,17 +114,25 @@
             transition: width 0.4s ease;
         }
 
-        /* Stats Row CSS */
-        .stats-row {
+        /* --- STICKY STATS CSS --- */
+        .sticky-stats {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            background: rgba(21, 31, 50, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-blue);
             display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px dashed var(--border-color);
+            justify-content: space-around;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
         }
         .stat-badge {
-            font-size: 0.8rem;
-            padding: 5px 12px;
+            font-size: 0.9rem;
+            padding: 6px 15px;
             border-radius: 12px;
             font-weight: bold;
         }
@@ -153,13 +162,8 @@
             border-color: var(--accent-blue);
         }
 
-        .view-section {
-            display: none;
-        }
-
-        .view-section.active {
-            display: block;
-        }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
 
         .match-card {
             background: var(--bg-card);
@@ -177,9 +181,7 @@
             border-color: var(--accent-green);
         }
 
-        .match-card.card-locked {
-            opacity: 0.9;
-        }
+        .match-card.card-locked { opacity: 0.9; }
 
         .match-meta {
             text-align: center;
@@ -236,6 +238,14 @@
             font-weight: 700;
             outline: none;
         }
+        
+        /* Used when converting inputs to spans for PNG capture */
+        .mock-input {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
 
         .score-input:disabled {
             background: #0f172a;
@@ -249,7 +259,6 @@
             font-weight: bold;
         }
 
-        /* Highlighted Quick Buttons CSS */
         .wdl-row {
             display: flex;
             gap: 5px;
@@ -272,12 +281,8 @@
             transition: all 0.2s ease;
         }
 
-        .wdl-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
+        .wdl-btn:disabled { cursor: not-allowed; opacity: 0.6; }
 
-        /* Active highlight states */
         .wdl-btn.active-w { background-color: var(--accent-green) !important; color: #000 !important; font-weight: 800; border-color: var(--accent-green); }
         .wdl-btn.active-d { background-color: var(--accent-gold) !important; color: #000 !important; font-weight: 800; border-color: var(--accent-gold); }
         .wdl-btn.active-l { background-color: var(--accent-red) !important; color: #fff !important; font-weight: 800; border-color: var(--accent-red); }
@@ -374,7 +379,8 @@
             text-align: center;
         }
 
-        #capture-area { padding: 10px; border-radius: 16px; }
+        #capture-area { padding: 10px 0; border-radius: 16px; }
+        
         .export-header {
             display: none;
             text-align: center;
@@ -396,7 +402,7 @@
             display: none;
         }
 
-        /* --- POP-UP MODAL STYLES --- */
+        /* --- POP-UP MODALS --- */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -416,11 +422,6 @@
             max-width: 350px;
             text-align: center;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            animation: popIn 0.3s ease-out;
-        }
-        @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
         }
         .modal-title {
             color: var(--accent-gold);
@@ -456,11 +457,33 @@
             color: white; font-size: 1.5rem;
             text-align: center; border-radius: 8px; font-weight: bold;
         }
-        .modal-score-inputs input:focus {
-            border-color: var(--accent-blue); outline: none;
+        
+        /* --- IMAGE RESULT MODAL --- */
+        #result-image-modal {
+            flex-direction: column;
+            z-index: 10000;
         }
-        .modal-buttons {
-            display: flex; gap: 10px;
+        .generated-image-container {
+            max-width: 90%;
+            max-height: 70vh;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 3px solid var(--accent-gold);
+            margin-bottom: 15px;
+            background: var(--bg-main);
+        }
+        .generated-image-container img {
+            width: 100%;
+            display: block;
+        }
+        .instruction-text {
+            color: var(--accent-green);
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 10px;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -483,12 +506,6 @@
                     <div class="progress-bar-fill" id="progress-bar"></div>
                 </div>
             </div>
-            
-            <!-- Added Stats Row for Completed/Remaining -->
-            <div class="stats-row">
-                <span class="stat-badge completed">Completed: <b id="stat-completed">0</b></span>
-                <span class="stat-badge remaining">Remaining: <b id="stat-remaining">64</b></span>
-            </div>
         </div>
     </header>
 
@@ -505,17 +522,24 @@
         </div>
 
         <div id="view-predictions" class="view-section active">
+            
+            <!-- STICKY STATS BAR -->
+            <div class="sticky-stats" id="sticky-stats-bar">
+                <span class="stat-badge completed">Completed: <b id="stat-completed">0</b></span>
+                <span class="stat-badge remaining">Remaining: <b id="stat-remaining">64</b></span>
+            </div>
+
             <div class="status-lock-alert" id="lock-banner">🔒 PREDICTIONS ARE LOCKED (CANNOT BE EDITED)</div>
             
             <div id="matches-container"></div>
             
-            <div class="controls">
+            <div class="controls" id="action-controls">
                 <button class="btn btn-success" id="save-btn" onclick="savePredictions()">Save Predictions</button>
                 <button class="btn btn-danger" id="lock-btn" onclick="lockPredictionsPermanent()">Lock Predictions Permanently</button>
                 <button class="btn btn-secondary" id="reset-user-btn" onclick="resetUserPredictions()">Reset Dashboard</button>
                 <hr style="border-color: var(--border-color); margin: 5px 0;">
                 <button class="btn btn-gold" onclick="downloadJsonFile()">Download File (.json)</button>
-                <button class="btn btn-primary" onclick="exportToPNG()">Share Dashboard (PNG)</button>
+                <button class="btn btn-primary" id="export-btn" onclick="exportToPNG()">Share Dashboard (PNG)</button>
             </div>
         </div>
     </div>
@@ -553,7 +577,7 @@
     </div>
 </div>
 
-<!-- POP-UP MODAL HTML -->
+<!-- SCORE INPUT MODAL -->
 <div id="score-modal" class="modal-overlay">
     <div class="modal-box">
         <div class="modal-title">Set Match Score</div>
@@ -567,10 +591,25 @@
             <span style="font-size: 1.2rem; color: var(--text-muted)">-</span>
             <input type="number" min="0" id="modal-score-away" placeholder="0">
         </div>
-        <div class="modal-buttons">
+        <div style="display: flex; gap: 10px;">
             <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
             <button class="btn btn-success" onclick="saveScoreFromModal()">Confirm Score</button>
         </div>
+    </div>
+</div>
+
+<!-- RESULT IMAGE MODAL FOR MOBILE FIX -->
+<div id="result-image-modal" class="modal-overlay">
+    <div class="instruction-text">
+        ✅ Dashboard Ready!<br>
+        <span style="font-size: 0.85rem; color: white;">Long-press (Tap & Hold) the image below to Save/Share, or click Download.</span>
+    </div>
+    <div class="generated-image-container">
+        <img id="final-captured-img" src="" alt="Captured Dashboard">
+    </div>
+    <div style="display: flex; gap: 10px; width: 90%; max-width: 350px;">
+        <button class="btn btn-secondary" onclick="closeImageModal()">Close</button>
+        <button class="btn btn-primary" id="direct-download-btn">⬇️ Download Image</button>
     </div>
 </div>
 
@@ -860,7 +899,6 @@
             const aVal = awayInputs[i].value;
             const matchCard = homeInputs[i].closest('.match-card');
 
-            // Set Green Background class if both inputs are filled
             if (hVal !== '' && aVal !== '') {
                 filledCount++;
                 matchCard.classList.add('completed-match');
@@ -872,7 +910,6 @@
         const total = matchesData.length;
         const remaining = total - filledCount;
 
-        // Update Text Stats
         document.getElementById('stat-completed').innerText = filledCount;
         document.getElementById('stat-remaining').innerText = remaining;
 
@@ -1008,6 +1045,14 @@
         calculatePointsAndRenderLeaderboard();
     }
 
+    function calculatePointsAndRenderLeaderboard() {
+        let total = 0;
+        matchesData.forEach(match => {
+            total += calculateSingleMatchPoints(predictions[match.id], actualScores[match.id]);
+        });
+        document.getElementById('board-total-pts').innerText = total;
+    }
+
     function calculateSingleMatchPoints(pred, actual) {
         if (!pred || !actual || pred.home === '' || pred.away === '' || actual.home === '' || actual.away === '') return 0;
         const pH = parseInt(pred.home), pA = parseInt(pred.away);
@@ -1022,42 +1067,93 @@
         return 0;
     }
 
-    // --- FIX FOR PNG EXPORT ---
-    function exportToPNG() {
+    // --- BULLETPROOF PNG EXPORT FOR ALL DEVICES ---
+    async function exportToPNG() {
+        const btn = document.getElementById('export-btn');
+        btn.innerText = "⏳ Generating Image...";
+        btn.disabled = true;
+
         const userName = document.getElementById('username').value || 'Player';
         const captureArea = document.getElementById('capture-area');
         const snapHeader = document.getElementById('snap-header');
         const snapUserTitle = document.getElementById('snap-user-title');
+        const stickyBar = document.getElementById('sticky-stats-bar');
+        const actionControls = document.getElementById('action-controls');
 
-        // Fix: Force set 'value' attributes on input elements so HTML2Canvas captures them correctly
-        document.querySelectorAll('#capture-area input').forEach(input => {
-            input.setAttribute('value', input.value);
+        // Step 1: Scroll to top to avoid capture cropping
+        const originalScroll = window.scrollY;
+        window.scrollTo(0, 0);
+
+        // Step 2: Swap inputs with plain spans (Fixes blank inputs in html2canvas)
+        const inputs = captureArea.querySelectorAll('input.score-input');
+        const replacements = [];
+        inputs.forEach(input => {
+            const span = document.createElement('div');
+            span.className = 'score-input mock-input';
+            span.innerText = input.value;
+            input.style.display = 'none';
+            input.parentNode.insertBefore(span, input);
+            replacements.push({input, span});
         });
 
+        // Step 3: Prepare UI for Screenshot
         snapUserTitle.innerText = `🏆 ${userName}'s Predictor Board`;
         snapHeader.style.display = 'block';
+        stickyBar.style.position = 'static'; // Prevent floating bug during capture
+        actionControls.style.display = 'none'; // Hide buttons
 
-        // Add a slight delay to allow the DOM to render the new attributes and headers
-        setTimeout(() => {
-            html2canvas(captureArea, { 
+        // Small delay to let browser render
+        await new Promise(r => setTimeout(r, 200));
+
+        try {
+            const canvas = await html2canvas(captureArea, { 
                 backgroundColor: '#0b0f19', 
                 scale: 2,
-                scrollY: -window.scrollY // Fix: Ensures scrolled areas are captured without blank spaces
-            }).then(canvas => {
-                snapHeader.style.display = 'none';
-                const imageURL = canvas.toDataURL("image/png");
-                const downloadLink = document.createElement('a');
-                downloadLink.href = imageURL;
-                downloadLink.download = `${userName}_wc_dashboard.png`;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-            }).catch(err => {
-                console.error("HTML2Canvas Error: ", err);
-                alert("PNG capture ma kei error aayo, pheri try garnuhos!");
-                snapHeader.style.display = 'none';
+                useCORS: true,
+                scrollY: 0,
+                windowY: 0
             });
-        }, 100);
+            
+            const imageURL = canvas.toDataURL("image/png");
+            
+            // Show inside the Modal for Mobile "Long Press to Save"
+            document.getElementById('final-captured-img').src = imageURL;
+            document.getElementById('result-image-modal').style.display = 'flex';
+            
+            // Configure the direct download button just in case
+            const dlBtn = document.getElementById('direct-download-btn');
+            dlBtn.onclick = function() {
+                const a = document.createElement('a');
+                a.href = imageURL;
+                a.download = `${userName}_WC_Dashboard.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+
+        } catch (err) {
+            console.error("HTML2Canvas Error: ", err);
+            alert("Error in generating photo. Please try again.");
+        } finally {
+            // Revert UI back to normal
+            snapHeader.style.display = 'none';
+            stickyBar.style.position = 'sticky';
+            actionControls.style.display = 'flex';
+            
+            replacements.forEach(r => {
+                r.span.remove();
+                r.input.style.display = 'block';
+            });
+            
+            window.scrollTo(0, originalScroll);
+            btn.innerText = "Share Dashboard (PNG)";
+            btn.disabled = false;
+        }
+    }
+
+    function closeImageModal() {
+        document.getElementById('result-image-modal').style.display = 'none';
+        document.getElementById('final-captured-img').src = '';
     }
 </script>
 </body>
