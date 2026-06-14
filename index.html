@@ -113,6 +113,23 @@
             transition: width 0.4s ease;
         }
 
+        /* Stats Row CSS */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+        }
+        .stat-badge {
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        .stat-badge.completed { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .stat-badge.remaining { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
         .tabs {
             display: flex;
             gap: 10px;
@@ -151,6 +168,13 @@
             margin-bottom: 15px;
             border: 1px solid var(--border-color);
             position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Green background for completed matches */
+        .match-card.completed-match {
+            background: linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, var(--bg-card) 100%);
+            border-color: var(--accent-green);
         }
 
         .match-card.card-locked {
@@ -182,9 +206,7 @@
             width: 40%;
         }
 
-        .team-flag {
-            font-size: 2rem;
-        }
+        .team-flag { font-size: 2rem; }
 
         .team-name {
             font-size: 0.9rem;
@@ -461,6 +483,12 @@
                     <div class="progress-bar-fill" id="progress-bar"></div>
                 </div>
             </div>
+            
+            <!-- Added Stats Row for Completed/Remaining -->
+            <div class="stats-row">
+                <span class="stat-badge completed">Completed: <b id="stat-completed">0</b></span>
+                <span class="stat-badge remaining">Remaining: <b id="stat-remaining">64</b></span>
+            </div>
         </div>
     </header>
 
@@ -617,7 +645,7 @@
     let predictions = JSON.parse(localStorage.getItem('wc_predictions')) || {};
     let actualScores = JSON.parse(localStorage.getItem('wc_actual_scores')) || {};
     let isLocked = JSON.parse(localStorage.getItem('wc_locked')) || false;
-    let currentModalMatchId = null; // Track which match is in the modal
+    let currentModalMatchId = null;
 
     document.addEventListener("DOMContentLoaded", () => {
         const savedName = localStorage.getItem('wc_username');
@@ -656,24 +684,21 @@
         }
     }
 
-    // --- MODAL LOGIC (New Feature) ---
+    // --- MODAL LOGIC ---
     function openModal(matchId, type) {
         if(isLocked) return;
         currentModalMatchId = matchId;
         
         const match = matchesData.find(m => m.id === matchId);
         
-        // Update Modal UI with Team Info
         document.getElementById('modal-home-team').innerHTML = `<span class="modal-team-flag">${match.homeFlag}</span><span class="modal-team-name">${match.homeTeam}</span>`;
         document.getElementById('modal-away-team').innerHTML = `<span class="modal-team-flag">${match.awayFlag}</span><span class="modal-team-name">${match.awayTeam}</span>`;
         
-        // Default suggested score based on W/D/L selection
         let defHome = '', defAway = '';
         if(type === 'W') { defHome = 2; defAway = 0; }
         else if(type === 'D') { defHome = 1; defAway = 1; }
         else if(type === 'L') { defHome = 0; defAway = 2; }
         
-        // Use existing input if present, otherwise use suggestion
         const existingHome = document.getElementById(`pred-home-${matchId}`).value;
         const existingAway = document.getElementById(`pred-away-${matchId}`).value;
 
@@ -699,11 +724,9 @@
             return;
         }
         
-        // Set main inputs
         document.getElementById(`pred-home-${currentModalMatchId}`).value = hScore;
         document.getElementById(`pred-away-${currentModalMatchId}`).value = aScore;
         
-        // Determine outcome to highlight the correct button automatically
         const h = parseInt(hScore);
         const a = parseInt(aScore);
         let type = '';
@@ -716,12 +739,10 @@
     }
 
     function applyHighlight(matchId, type) {
-        // Remove existing highlights
         document.getElementById(`btn-w-${matchId}`).classList.remove('active-w');
         document.getElementById(`btn-d-${matchId}`).classList.remove('active-d');
         document.getElementById(`btn-l-${matchId}`).classList.remove('active-l');
         
-        // Apply new highlight
         if(type === 'W') document.getElementById(`btn-w-${matchId}`).classList.add('active-w');
         if(type === 'D') document.getElementById(`btn-d-${matchId}`).classList.add('active-d');
         if(type === 'L') document.getElementById(`btn-l-${matchId}`).classList.add('active-l');
@@ -729,7 +750,6 @@
         updateProgressBar();
     }
 
-    // Manual input removal of button highlight
     function manualInputCheck(matchId) {
         const hStr = document.getElementById(`pred-home-${matchId}`).value;
         const aStr = document.getElementById(`pred-away-${matchId}`).value;
@@ -761,7 +781,6 @@
                 badgeHTML = `<span class="match-points-badge pts-${pointsMeta}">${pointsMeta} PTS</span>`;
             }
 
-            // Determine active class on load
             let wClass='', dClass='', lClass='';
             if(pred.home !== '' && pred.away !== '') {
                 const h = parseInt(pred.home);
@@ -837,12 +856,27 @@
         let filledCount = 0;
 
         for (let i = 0; i < homeInputs.length; i++) {
-            if (homeInputs[i].value !== '' && awayInputs[i].value !== '') {
+            const hVal = homeInputs[i].value;
+            const aVal = awayInputs[i].value;
+            const matchCard = homeInputs[i].closest('.match-card');
+
+            // Set Green Background class if both inputs are filled
+            if (hVal !== '' && aVal !== '') {
                 filledCount++;
+                matchCard.classList.add('completed-match');
+            } else {
+                matchCard.classList.remove('completed-match');
             }
         }
 
-        const percentage = Math.round((filledCount / matchesData.length) * 100);
+        const total = matchesData.length;
+        const remaining = total - filledCount;
+
+        // Update Text Stats
+        document.getElementById('stat-completed').innerText = filledCount;
+        document.getElementById('stat-remaining').innerText = remaining;
+
+        const percentage = Math.round((filledCount / total) * 100);
         document.getElementById('progress-bar').style.width = `${percentage}%`;
         document.getElementById('progress-percent').innerText = `${percentage}%`;
     }
@@ -867,7 +901,6 @@
         calculatePointsAndRenderLeaderboard();
     }
 
-    // Permanent Lock Mechanism with Alert Warning
     function lockPredictionsPermanent() {
         if (isLocked) return;
         
@@ -892,7 +925,6 @@
         }
     }
 
-    // User Reset Button
     function resetUserPredictions() {
         if (isLocked) return;
         if (confirm("Kya aap sach me apni sabhi predictions clear karna chahte hain?")) {
@@ -907,7 +939,6 @@
         }
     }
 
-    // Admin Reset Button
     function resetAdminScores() {
         if (confirm("⚠️ Danger: Kya aap sabhi official actual scores clear karna chahte hain?")) {
             actualScores = {};
@@ -982,44 +1013,51 @@
         const pH = parseInt(pred.home), pA = parseInt(pred.away);
         const aH = parseInt(actual.home), aA = parseInt(actual.away);
 
-        if (pH === aH && pA === aA) return 5; // Exact Score
+        if (pH === aH && pA === aA) return 5; 
 
         const predOutcome = pH > pA ? 'W' : (pH < pA ? 'L' : 'D');
         const actualOutcome = aH > aA ? 'W' : (aH < aA ? 'L' : 'D');
-        if (predOutcome === actualOutcome) return 2; // Correct Outcome
+        if (predOutcome === actualOutcome) return 2; 
 
         return 0;
     }
 
-    function calculatePointsAndRenderLeaderboard() {
-        let totalPoints = 0;
-        matchesData.forEach(match => {
-            totalPoints += calculateSingleMatchPoints(predictions[match.id], actualScores[match.id]);
-        });
-        document.getElementById('board-total-pts').innerText = totalPoints;
-    }
-
+    // --- FIX FOR PNG EXPORT ---
     function exportToPNG() {
         const userName = document.getElementById('username').value || 'Player';
         const captureArea = document.getElementById('capture-area');
         const snapHeader = document.getElementById('snap-header');
         const snapUserTitle = document.getElementById('snap-user-title');
 
+        // Fix: Force set 'value' attributes on input elements so HTML2Canvas captures them correctly
+        document.querySelectorAll('#capture-area input').forEach(input => {
+            input.setAttribute('value', input.value);
+        });
+
         snapUserTitle.innerText = `🏆 ${userName}'s Predictor Board`;
         snapHeader.style.display = 'block';
 
-        html2canvas(captureArea, { backgroundColor: '#0b0f19', scale: 2 }).then(canvas => {
-            snapHeader.style.display = 'none';
-            const imageURL = canvas.toDataURL("image/png");
-            const downloadLink = document.createElement('a');
-            downloadLink.href = imageURL;
-            downloadLink.download = `${userName}_wc_dashboard.png`;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-        }).catch(err => {
-            snapHeader.style.display = 'none';
-        });
+        // Add a slight delay to allow the DOM to render the new attributes and headers
+        setTimeout(() => {
+            html2canvas(captureArea, { 
+                backgroundColor: '#0b0f19', 
+                scale: 2,
+                scrollY: -window.scrollY // Fix: Ensures scrolled areas are captured without blank spaces
+            }).then(canvas => {
+                snapHeader.style.display = 'none';
+                const imageURL = canvas.toDataURL("image/png");
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imageURL;
+                downloadLink.download = `${userName}_wc_dashboard.png`;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            }).catch(err => {
+                console.error("HTML2Canvas Error: ", err);
+                alert("PNG capture ma kei error aayo, pheri try garnuhos!");
+                snapHeader.style.display = 'none';
+            });
+        }, 100);
     }
 </script>
 </body>
