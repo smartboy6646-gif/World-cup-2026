@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Cup Predictor Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #151f32;
+            --bg-input: #1e293b;
+            --accent-green: #10b981;
+            --accent-gold: #f59e0b;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 20px 10px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 600px;
+            background: linear-gradient(180deg, #16223f 0%, var(--bg-main) 100%);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--text-main);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(45deg, #ffdf00, var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-box {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        .user-box label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        .user-box input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+        }
+
+        .progress-container {
+            margin-top: 12px;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .progress-bar-bg {
+            background: var(--bg-input);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+            width: 0%;
+            height: 100%;
+            transition: width 0.4s ease;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        .match-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .match-card.card-locked {
+            opacity: 0.9;
+        }
+
+        .match-meta {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .match-fixture {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .team {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            width: 40%;
+        }
+
+        .team-flag {
+            font-size: 2rem;
+        }
+
+        .team-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .score-inputs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-input {
+            width: 45px;
+            height: 40px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .score-input:disabled {
+            background: #0f172a;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .vs {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        /* Highlighted Quick Buttons CSS */
+        .wdl-row {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 5px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 10px;
+        }
+
+        .wdl-btn {
+            flex: 1;
+            background: var(--bg-input);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .wdl-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Active highlight states */
+        .wdl-btn.active-w { background-color: var(--accent-green) !important; color: #000 !important; font-weight: 800; border-color: var(--accent-green); }
+        .wdl-btn.active-d { background-color: var(--accent-gold) !important; color: #000 !important; font-weight: 800; border-color: var(--accent-gold); }
+        .wdl-btn.active-l { background-color: var(--accent-red) !important; color: #fff !important; font-weight: 800; border-color: var(--accent-red); }
+
+        .match-points-badge {
+            position: absolute;
+            top: -8px;
+            right: 15px;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        .pts-5 { background: var(--accent-green); color: black; }
+        .pts-2 { background: var(--accent-gold); color: black; }
+        .pts-0 { background: var(--accent-red); color: white; }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background-color: #334155; color: #64748b; cursor: not-allowed; }
+
+        .btn-success { background-color: var(--accent-green); color: #000; }
+        .btn-primary { background-color: var(--accent-blue); color: #fff; }
+        .btn-gold { background-color: var(--accent-gold); color: #000; }
+        .btn-danger { background-color: var(--accent-red); color: #fff; }
+        .btn-secondary { background-color: #475569; color: #fff; }
+
+        .leaderboard-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--accent-gold);
+            margin-bottom: 20px;
+        }
+
+        .total-points-display {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            margin: 10px 0;
+        }
+
+        .file-upload-box {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px dashed var(--accent-blue);
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        #upload-result {
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            border: 1px solid var(--accent-green);
+            display: none;
+        }
+
+        .admin-auth-box {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .admin-auth-box input {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: white;
+            text-align: center;
+        }
+
+        #capture-area { padding: 10px; border-radius: 16px; }
+        .export-header {
+            display: none;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        
+        .status-lock-alert {
+            background-color: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--accent-red);
+            color: #fca5a5;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: none;
+        }
+
+        /* --- POP-UP MODAL STYLES --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-blue);
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-title {
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .modal-match-details {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background: var(--bg-input);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .modal-team { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .modal-team-flag { font-size: 2rem; }
+        .modal-team-name { font-size: 0.8rem; font-weight: bold; color: white; }
+        .modal-vs { font-size: 1rem; font-weight: bold; color: var(--text-muted); padding: 0 10px;}
+        .modal-score-inputs {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-score-inputs input {
+            width: 60px; height: 50px;
+            background: var(--bg-main);
+            border: 2px solid var(--border-color);
+            color: white; font-size: 1.5rem;
+            text-align: center; border-radius: 8px; font-weight: bold;
+        }
+        .modal-score-inputs input:focus {
+            border-color: var(--accent-blue); outline: none;
+        }
+        .modal-buttons {
+            display: flex; gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>🏆 Cup Predictor Pro</h1>
+        
+        <div class="user-box">
+            <label for="username">Player Name</label>
+            <input type="text" id="username" placeholder="Enter your name...">
+            
+            <div class="progress-container">
+                <div class="progress-text">
+                    <span>Prediction Progress</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('predictions')">Predict</button>
+        <button class="tab-btn" onclick="switchTab('leaderboard')">Standings & Files</button>
+        <button class="tab-btn" onclick="switchTab('admin')">Admin UI</button>
+    </div>
+
+    <div id="capture-area">
+        <div class="export-header" id="snap-header">
+            <h2 style="color: #ffdf00;" id="snap-user-title">Predictions</h2>
+            <p style="color: #94a3b8; font-size: 0.8rem;">World Cup Dashboard</p>
+        </div>
+
+        <div id="view-predictions" class="view-section active">
+            <div class="status-lock-alert" id="lock-banner">🔒 PREDICTIONS ARE LOCKED (CANNOT BE EDITED)</div>
+            
+            <div id="matches-container"></div>
+            
+            <div class="controls">
+                <button class="btn btn-success" id="save-btn" onclick="savePredictions()">Save Predictions</button>
+                <button class="btn btn-danger" id="lock-btn" onclick="lockPredictionsPermanent()">Lock Predictions Permanently</button>
+                <button class="btn btn-secondary" id="reset-user-btn" onclick="resetUserPredictions()">Reset Dashboard</button>
+                <hr style="border-color: var(--border-color); margin: 5px 0;">
+                <button class="btn btn-gold" onclick="downloadJsonFile()">Download File (.json)</button>
+                <button class="btn btn-primary" onclick="exportToPNG()">Share Dashboard (PNG)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-leaderboard" class="view-section">
+        <div class="leaderboard-card">
+            <div style="font-size: 1.1rem; color: var(--text-main);">Your Standings Score</div>
+            <div class="total-points-display" id="board-total-pts">0</div>
+        </div>
+
+        <div class="file-upload-box">
+            <h4>📁 Check Points From Player File</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">Upload any player's downloaded .json file to view their score instantly.</p>
+            <input type="file" id="upload-file" accept=".json" onchange="calculateUploadedFile(event)">
+            <div id="upload-result"></div>
+        </div>
+    </div>
+
+    <div id="view-admin" class="view-section">
+        <div id="admin-login" class="admin-auth-box">
+            <h3>Admin Login</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Enter admin password to manage scores.</p>
+            <input type="password" id="admin-pwd" placeholder="Enter Password">
+            <button class="btn btn-primary" onclick="checkAdminPassword()">Unlock Admin Panel</button>
+            <p id="admin-error" style="color: var(--accent-red); display: none; margin-top: 10px; font-weight: bold;">Incorrect Password!</p>
+        </div>
+
+        <div id="admin-content" style="display: none;">
+            <div id="admin-matches-container"></div>
+            <div class="controls">
+                <button class="btn btn-success" onclick="saveAdminScores()">Publish Official Scores</button>
+                <button class="btn btn-danger" onclick="resetAdminScores()">Reset All Official Scores</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- POP-UP MODAL HTML -->
+<div id="score-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Set Match Score</div>
+        <div class="modal-match-details">
+            <div class="modal-team" id="modal-home-team"></div>
+            <div class="modal-vs">VS</div>
+            <div class="modal-team" id="modal-away-team"></div>
+        </div>
+        <div class="modal-score-inputs">
+            <input type="number" min="0" id="modal-score-home" placeholder="0">
+            <span style="font-size: 1.2rem; color: var(--text-muted)">-</span>
+            <input type="number" min="0" id="modal-score-away" placeholder="0">
+        </div>
+        <div class="modal-buttons">
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-success" onclick="saveScoreFromModal()">Confirm Score</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const matchesData = [
+        { id: 1, date: "14 June", homeTeam: "Germany", homeFlag: "🇩🇪", awayTeam: "Curacao", awayFlag: "🇨🇼" },
+        { id: 2, date: "14 June", homeTeam: "Netherlands", homeFlag: "🇳🇱", awayTeam: "Japan", awayFlag: "🇯🇵" },
+        { id: 3, date: "14 June", homeTeam: "Ivory Coast", homeFlag: "🇨🇮", awayTeam: "Ecuador", awayFlag: "🇪🇨" },
+        { id: 4, date: "14 June", homeTeam: "Sweden", homeFlag: "🇸🇪", awayTeam: "Tunisia", awayFlag: "🇹🇳" },
+        { id: 5, date: "15 June", homeTeam: "Spain", homeFlag: "🇪🇸", awayTeam: "Cape Verde", awayFlag: "🇨🇻" },
+        { id: 6, date: "15 June", homeTeam: "Belgium", homeFlag: "🇧🇪", awayTeam: "Egypt", awayFlag: "🇪🇬" },
+        { id: 7, date: "15 June", homeTeam: "Saudi Arabia", homeFlag: "🇸🇦", awayTeam: "Uruguay", awayFlag: "🇺🇾" },
+        { id: 8, date: "15 June", homeTeam: "Iran", homeFlag: "🇮🇷", awayTeam: "New Zealand", awayFlag: "🇳🇿" },
+        { id: 9, date: "16 June", homeTeam: "France", homeFlag: "🇫🇷", awayTeam: "Senegal", awayFlag: "🇸🇳" },
+        { id: 10, date: "16 June", homeTeam: "Iraq", homeFlag: "🇮🇶", awayTeam: "Norway", awayFlag: "🇳🇴" },
+        { id: 11, date: "16 June", homeTeam: "Argentina", homeFlag: "🇦🇷", awayTeam: "Algeria", awayFlag: "🇩🇿" },
+        { id: 12, date: "17 June", homeTeam: "Austria", homeFlag: "🇦🇹", awayTeam: "Jordan", awayFlag: "🇯🇴" },
+        { id: 13, date: "17 June", homeTeam: "Portugal", homeFlag: "🇵🇹", awayTeam: "DR Congo", awayFlag: "🇨🇩" },
+        { id: 14, date: "17 June", homeTeam: "England", homeFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", awayTeam: "Croatia", awayFlag: "🇭🇷" },
+        { id: 15, date: "17 June", homeTeam: "Ghana", homeFlag: "🇬🇭", awayTeam: "Panama", awayFlag: "🇵🇦" },
+        { id: 16, date: "17 June", homeTeam: "Uzbekistan", homeFlag: "🇺🇿", awayTeam: "Colombia", awayFlag: "🇨🇴" },
+        { id: 17, date: "18 June", homeTeam: "Czechia", homeFlag: "🇨🇿", awayTeam: "South Africa", awayFlag: "🇿🇦" },
+        { id: 18, date: "18 June", homeTeam: "Switzerland", homeFlag: "🇨🇭", awayTeam: "Bosnia & Herzegovina", awayFlag: "🇧🇦" },
+        { id: 19, date: "18 June", homeTeam: "Canada", homeFlag: "🇨🇦", awayTeam: "Qatar", awayFlag: "🇶🇦" },
+        { id: 20, date: "18 June", homeTeam: "Mexico", homeFlag: "🇲🇽", awayTeam: "South Korea", awayFlag: "🇰🇷" },
+        { id: 21, date: "19 June", homeTeam: "USA", homeFlag: "🇺🇸", awayTeam: "Australia", awayFlag: "🇦🇺" },
+        { id: 22, date: "19 June", homeTeam: "Scotland", homeFlag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", awayTeam: "Morocco", awayFlag: "🇲🇦" },
+        { id: 23, date: "19 June", homeTeam: "Brazil", homeFlag: "🇧🇷", awayTeam: "Haiti", awayFlag: "🇭🇹" },
+        { id: 24, date: "19 June", homeTeam: "Turkey", homeFlag: "🇹🇷", awayTeam: "Paraguay", awayFlag: "🇵🇾" },
+        { id: 25, date: "20 June", homeTeam: "Netherlands", homeFlag: "🇳🇱", awayTeam: "Sweden", awayFlag: "🇸🇪" },
+        { id: 26, date: "20 June", homeTeam: "Germany", homeFlag: "🇩🇪", awayTeam: "Ivory Coast", awayFlag: "🇨🇮" },
+        { id: 27, date: "20 June", homeTeam: "Ecuador", homeFlag: "🇪🇨", awayTeam: "Curacao", awayFlag: "🇨🇼" },
+        { id: 28, date: "21 June", homeTeam: "Tunisia", homeFlag: "🇹🇳", awayTeam: "Japan", awayFlag: "🇯🇵" },
+        { id: 29, date: "21 June", homeTeam: "Spain", homeFlag: "🇪🇸", awayTeam: "Saudi Arabia", awayFlag: "🇸🇦" },
+        { id: 30, date: "21 June", homeTeam: "Belgium", homeFlag: "🇧🇪", awayTeam: "Iran", awayFlag: "🇮🇷" },
+        { id: 31, date: "21 June", homeTeam: "Uruguay", homeFlag: "🇺🇾", awayTeam: "Cape Verde", awayFlag: "🇨🇻" },
+        { id: 32, date: "21 June", homeTeam: "New Zealand", homeFlag: "🇳🇿", awayTeam: "Egypt", awayFlag: "🇪🇬" },
+        { id: 33, date: "22 June", homeTeam: "Argentina", homeFlag: "🇦🇷", awayTeam: "Austria", awayFlag: "🇦🇹" },
+        { id: 34, date: "22 June", homeTeam: "France", homeFlag: "🇫🇷", awayTeam: "Iraq", awayFlag: "🇮🇶" },
+        { id: 35, date: "22 June", homeTeam: "Norway", homeFlag: "🇳🇴", awayTeam: "Senegal", awayFlag: "🇸🇳" },
+        { id: 36, date: "22 June", homeTeam: "Jordan", homeFlag: "🇯🇴", awayTeam: "Algeria", awayFlag: "🇩🇿" },
+        { id: 37, date: "23 June", homeTeam: "Portugal", homeFlag: "🇵🇹", awayTeam: "Uzbekistan", awayFlag: "🇺🇿" },
+        { id: 38, date: "23 June", homeTeam: "England", homeFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", awayTeam: "Ghana", awayFlag: "🇬🇭" },
+        { id: 39, date: "23 June", homeTeam: "Panama", homeFlag: "🇵🇦", awayTeam: "Croatia", awayFlag: "🇭🇷" },
+        { id: 40, date: "23 June", homeTeam: "Colombia", homeFlag: "🇨🇴", awayTeam: "DR Congo", awayFlag: "🇨🇩" },
+        { id: 41, date: "24 June", homeTeam: "Switzerland", homeFlag: "🇨🇭", awayTeam: "Canada", awayFlag: "🇨🇦" },
+        { id: 42, date: "24 June", homeTeam: "Bosnia & Herzegovina", homeFlag: "🇧🇦", awayTeam: "Qatar", awayFlag: "🇶🇦" },
+        { id: 43, date: "24 June", homeTeam: "Scotland", homeFlag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", awayTeam: "Brazil", awayFlag: "🇧🇷" },
+        { id: 44, date: "24 June", homeTeam: "Morocco", homeFlag: "🇲🇦", awayTeam: "Haiti", awayFlag: "🇭🇹" },
+        { id: 45, date: "24 June", homeTeam: "Czechia", homeFlag: "🇨🇿", awayTeam: "Mexico", awayFlag: "🇲🇽" },
+        { id: 46, date: "24 June", homeTeam: "South Africa", homeFlag: "🇿🇦", awayTeam: "South Korea", awayFlag: "🇰🇷" },
+        { id: 47, date: "25 June", homeTeam: "Ecuador", homeFlag: "🇪🇨", awayTeam: "Germany", awayFlag: "🇩🇪" },
+        { id: 48, date: "25 June", homeTeam: "Curacao", homeFlag: "🇨🇼", awayTeam: "Ivory Coast", awayFlag: "🇨🇮" },
+        { id: 49, date: "25 June", homeTeam: "Tunisia", homeFlag: "🇹🇳", awayTeam: "Netherlands", awayFlag: "🇳🇱" },
+        { id: 50, date: "25 June", homeTeam: "Japan", homeFlag: "🇯🇵", awayTeam: "Sweden", awayFlag: "🇸🇪" },
+        { id: 51, date: "25 June", homeTeam: "Turkey", homeFlag: "🇹🇷", awayTeam: "USA", awayFlag: "🇺🇸" },
+        { id: 52, date: "25 June", homeTeam: "Paraguay", homeFlag: "🇵🇾", awayTeam: "Australia", awayFlag: "🇦🇺" },
+        { id: 53, date: "26 June", homeTeam: "Norway", homeFlag: "🇳🇴", awayTeam: "France", awayFlag: "🇫🇷" },
+        { id: 54, date: "26 June", homeTeam: "Senegal", homeFlag: "🇸🇳", awayTeam: "Iraq", awayFlag: "🇮🇶" },
+        { id: 55, date: "26 June", homeTeam: "Uruguay", homeFlag: "🇺🇾", awayTeam: "Spain", awayFlag: "🇪🇸" },
+        { id: 56, date: "26 June", homeTeam: "Cape Verde", homeFlag: "🇨🇻", awayTeam: "Saudi Arabia", awayFlag: "🇸🇦" },
+        { id: 57, date: "26 June", homeTeam: "New Zealand", homeFlag: "🇳🇿", awayTeam: "Belgium", awayFlag: "🇧🇪" },
+        { id: 58, date: "26 June", homeTeam: "Egypt", homeFlag: "🇪🇬", awayTeam: "Iran", awayFlag: "🇮🇷" },
+        { id: 59, date: "27 June", homeTeam: "Panama", homeFlag: "🇵🇦", awayTeam: "England", awayFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+        { id: 60, date: "27 June", homeTeam: "Croatia", homeFlag: "🇭🇷", awayTeam: "Ghana", awayFlag: "🇬🇭" },
+        { id: 61, date: "27 June", homeTeam: "Colombia", homeFlag: "🇨🇴", awayTeam: "Portugal", awayFlag: "🇵🇹" },
+        { id: 62, date: "27 June", homeTeam: "DR Congo", homeFlag: "🇨🇩", awayTeam: "Uzbekistan", awayFlag: "🇺🇿" },
+        { id: 63, date: "27 June", homeTeam: "Jordan", homeFlag: "🇯🇴", awayTeam: "Argentina", awayFlag: "🇦🇷" },
+        { id: 64, date: "27 June", homeTeam: "Algeria", homeFlag: "🇩🇿", awayTeam: "Austria", awayFlag: "🇦🇹" }
+    ];
+
+    let predictions = JSON.parse(localStorage.getItem('wc_predictions')) || {};
+    let actualScores = JSON.parse(localStorage.getItem('wc_actual_scores')) || {};
+    let isLocked = JSON.parse(localStorage.getItem('wc_locked')) || false;
+    let currentModalMatchId = null; // Track which match is in the modal
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedName = localStorage.getItem('wc_username');
+        if (savedName) document.getElementById('username').value = savedName;
+
+        renderUserMatches();
+        updateProgressBar();
+        calculatePointsAndRenderLeaderboard();
+        applyLockState();
+        
+        document.getElementById('username').addEventListener('input', (e) => {
+            if(!isLocked) localStorage.setItem('wc_username', e.target.value);
+        });
+    });
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
+        
+        event.target.classList.add('active');
+        document.getElementById(`view-${tabId}`).classList.add('active');
+        
+        if(tabId === 'leaderboard') {
+            calculatePointsAndRenderLeaderboard();
+        }
+    }
+
+    function checkAdminPassword() {
+        if (document.getElementById('admin-pwd').value === "prakash22") {
+            document.getElementById('admin-login').style.display = "none";
+            document.getElementById('admin-content').style.display = "block";
+            renderAdminMatches();
+        } else {
+            document.getElementById('admin-error').style.display = "block";
+            setTimeout(() => { document.getElementById('admin-error').style.display = "none"; }, 3000);
+        }
+    }
+
+    // --- MODAL LOGIC (New Feature) ---
+    function openModal(matchId, type) {
+        if(isLocked) return;
+        currentModalMatchId = matchId;
+        
+        const match = matchesData.find(m => m.id === matchId);
+        
+        // Update Modal UI with Team Info
+        document.getElementById('modal-home-team').innerHTML = `<span class="modal-team-flag">${match.homeFlag}</span><span class="modal-team-name">${match.homeTeam}</span>`;
+        document.getElementById('modal-away-team').innerHTML = `<span class="modal-team-flag">${match.awayFlag}</span><span class="modal-team-name">${match.awayTeam}</span>`;
+        
+        // Default suggested score based on W/D/L selection
+        let defHome = '', defAway = '';
+        if(type === 'W') { defHome = 2; defAway = 0; }
+        else if(type === 'D') { defHome = 1; defAway = 1; }
+        else if(type === 'L') { defHome = 0; defAway = 2; }
+        
+        // Use existing input if present, otherwise use suggestion
+        const existingHome = document.getElementById(`pred-home-${matchId}`).value;
+        const existingAway = document.getElementById(`pred-away-${matchId}`).value;
+
+        document.getElementById('modal-score-home').value = existingHome !== '' ? existingHome : defHome;
+        document.getElementById('modal-score-away').value = existingAway !== '' ? existingAway : defAway;
+        
+        document.getElementById('score-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('score-modal').style.display = 'none';
+        currentModalMatchId = null;
+    }
+
+    function saveScoreFromModal() {
+        if(currentModalMatchId === null) return;
+        
+        const hScore = document.getElementById('modal-score-home').value;
+        const aScore = document.getElementById('modal-score-away').value;
+        
+        if(hScore === '' || aScore === '') {
+            alert("Please enter both scores!");
+            return;
+        }
+        
+        // Set main inputs
+        document.getElementById(`pred-home-${currentModalMatchId}`).value = hScore;
+        document.getElementById(`pred-away-${currentModalMatchId}`).value = aScore;
+        
+        // Determine outcome to highlight the correct button automatically
+        const h = parseInt(hScore);
+        const a = parseInt(aScore);
+        let type = '';
+        if(h > a) type = 'W';
+        else if (h === a) type = 'D';
+        else if (h < a) type = 'L';
+        
+        applyHighlight(currentModalMatchId, type);
+        closeModal();
+    }
+
+    function applyHighlight(matchId, type) {
+        // Remove existing highlights
+        document.getElementById(`btn-w-${matchId}`).classList.remove('active-w');
+        document.getElementById(`btn-d-${matchId}`).classList.remove('active-d');
+        document.getElementById(`btn-l-${matchId}`).classList.remove('active-l');
+        
+        // Apply new highlight
+        if(type === 'W') document.getElementById(`btn-w-${matchId}`).classList.add('active-w');
+        if(type === 'D') document.getElementById(`btn-d-${matchId}`).classList.add('active-d');
+        if(type === 'L') document.getElementById(`btn-l-${matchId}`).classList.add('active-l');
+        
+        updateProgressBar();
+    }
+
+    // Manual input removal of button highlight
+    function manualInputCheck(matchId) {
+        const hStr = document.getElementById(`pred-home-${matchId}`).value;
+        const aStr = document.getElementById(`pred-away-${matchId}`).value;
+        
+        document.getElementById(`btn-w-${matchId}`).classList.remove('active-w');
+        document.getElementById(`btn-d-${matchId}`).classList.remove('active-d');
+        document.getElementById(`btn-l-${matchId}`).classList.remove('active-l');
+        
+        if(hStr !== '' && aStr !== '') {
+            const h = parseInt(hStr);
+            const a = parseInt(aStr);
+            if(h > a) document.getElementById(`btn-w-${matchId}`).classList.add('active-w');
+            else if(h === a) document.getElementById(`btn-d-${matchId}`).classList.add('active-d');
+            else if(h < a) document.getElementById(`btn-l-${matchId}`).classList.add('active-l');
+        }
+        updateProgressBar();
+    }
+
+    function renderUserMatches() {
+        const container = document.getElementById('matches-container');
+        container.innerHTML = '';
+
+        matchesData.forEach(match => {
+            const pred = predictions[match.id] || { home: '', away: '' };
+            const pointsMeta = calculateSingleMatchPoints(pred, actualScores[match.id]);
+            
+            let badgeHTML = '';
+            if (actualScores[match.id] && actualScores[match.id].home !== '' && actualScores[match.id].away !== '') {
+                badgeHTML = `<span class="match-points-badge pts-${pointsMeta}">${pointsMeta} PTS</span>`;
+            }
+
+            // Determine active class on load
+            let wClass='', dClass='', lClass='';
+            if(pred.home !== '' && pred.away !== '') {
+                const h = parseInt(pred.home);
+                const a = parseInt(pred.away);
+                if(h > a) wClass = 'active-w';
+                else if(h === a) dClass = 'active-d';
+                else if(h < a) lClass = 'active-l';
+            }
+
+            const card = document.createElement('div');
+            card.className = `match-card ${isLocked ? 'card-locked' : ''}`;
+            card.innerHTML = `
+                ${badgeHTML}
+                <div class="match-meta">📅 ${match.date}</div>
+                <div class="match-fixture">
+                    <div class="team">
+                        <span class="team-flag">${match.homeFlag}</span>
+                        <span class="team-name">${match.homeTeam}</span>
+                    </div>
+                    <div class="score-inputs">
+                        <input type="number" min="0" id="pred-home-${match.id}" class="score-input pred-home" data-id="${match.id}" value="${pred.home}" oninput="manualInputCheck(${match.id})" ${isLocked ? 'disabled' : ''}>
+                        <span class="vs">:</span>
+                        <input type="number" min="0" id="pred-away-${match.id}" class="score-input pred-away" data-id="${match.id}" value="${pred.away}" oninput="manualInputCheck(${match.id})" ${isLocked ? 'disabled' : ''}>
+                    </div>
+                    <div class="team">
+                        <span class="team-flag">${match.awayFlag}</span>
+                        <span class="team-name">${match.awayTeam}</span>
+                    </div>
+                </div>
+                <div class="wdl-row">
+                    <button id="btn-w-${match.id}" class="wdl-btn ${wClass}" onclick="openModal(${match.id}, 'W')" ${isLocked ? 'disabled' : ''}>Win (H)</button>
+                    <button id="btn-d-${match.id}" class="wdl-btn ${dClass}" onclick="openModal(${match.id}, 'D')" ${isLocked ? 'disabled' : ''}>Draw</button>
+                    <button id="btn-l-${match.id}" class="wdl-btn ${lClass}" onclick="openModal(${match.id}, 'L')" ${isLocked ? 'disabled' : ''}>Win (A)</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderAdminMatches() {
+        const container = document.getElementById('admin-matches-container');
+        container.innerHTML = '';
+
+        matchesData.forEach(match => {
+            const act = actualScores[match.id] || { home: '', away: '' };
+            const card = document.createElement('div');
+            card.className = 'match-card';
+            card.innerHTML = `
+                <div class="match-meta">📅 ${match.date} (Official Final Score)</div>
+                <div class="match-fixture">
+                    <div class="team">
+                        <span class="team-flag">${match.homeFlag}</span>
+                        <span class="team-name">${match.homeTeam}</span>
+                    </div>
+                    <div class="score-inputs">
+                        <input type="number" min="0" class="score-input act-home" data-id="${match.id}" value="${act.home}">
+                        <span class="vs">:</span>
+                        <input type="number" min="0" class="score-input act-away" data-id="${match.id}" value="${act.away}">
+                    </div>
+                    <div class="team">
+                        <span class="team-flag">${match.awayFlag}</span>
+                        <span class="team-name">${match.awayTeam}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function updateProgressBar() {
+        const homeInputs = document.querySelectorAll('.pred-home');
+        const awayInputs = document.querySelectorAll('.pred-away');
+        let filledCount = 0;
+
+        for (let i = 0; i < homeInputs.length; i++) {
+            if (homeInputs[i].value !== '' && awayInputs[i].value !== '') {
+                filledCount++;
+            }
+        }
+
+        const percentage = Math.round((filledCount / matchesData.length) * 100);
+        document.getElementById('progress-bar').style.width = `${percentage}%`;
+        document.getElementById('progress-percent').innerText = `${percentage}%`;
+    }
+
+    function savePredictions() {
+        if (isLocked) return alert("Predictions are strictly locked. No edits allowed!");
+        
+        document.querySelectorAll('.pred-home').forEach(input => {
+            const id = input.getAttribute('data-id');
+            if(!predictions[id]) predictions[id] = {};
+            predictions[id].home = input.value;
+        });
+
+        document.querySelectorAll('.pred-away').forEach(input => {
+            const id = input.getAttribute('data-id');
+            if(!predictions[id]) predictions[id] = {};
+            predictions[id].away = input.value;
+        });
+
+        localStorage.setItem('wc_predictions', JSON.stringify(predictions));
+        alert("Predictions saved successfully!");
+        calculatePointsAndRenderLeaderboard();
+    }
+
+    // Permanent Lock Mechanism with Alert Warning
+    function lockPredictionsPermanent() {
+        if (isLocked) return;
+        
+        const warning = confirm("⚠️ WARNING: Kya aap sure hain? Ek baar lock karne ke baad aap apni predictions ko change ya edit nahi kar payenge!");
+        if (warning) {
+            savePredictions();
+            isLocked = true;
+            localStorage.setItem('wc_locked', JSON.stringify(isLocked));
+            applyLockState();
+            renderUserMatches();
+            alert("🔒 Dashboard successfully locked permanently.");
+        }
+    }
+
+    function applyLockState() {
+        if(isLocked) {
+            document.getElementById('lock-banner').style.display = 'block';
+            document.getElementById('username').disabled = true;
+            document.getElementById('save-btn').disabled = true;
+            document.getElementById('lock-btn').disabled = true;
+            document.getElementById('reset-user-btn').disabled = true;
+        }
+    }
+
+    // User Reset Button
+    function resetUserPredictions() {
+        if (isLocked) return;
+        if (confirm("Kya aap sach me apni sabhi predictions clear karna chahte hain?")) {
+            predictions = {};
+            localStorage.removeItem('wc_predictions');
+            localStorage.removeItem('wc_username');
+            document.getElementById('username').value = '';
+            renderUserMatches();
+            updateProgressBar();
+            calculatePointsAndRenderLeaderboard();
+            alert("Dashboard clear ho gaya hai!");
+        }
+    }
+
+    // Admin Reset Button
+    function resetAdminScores() {
+        if (confirm("⚠️ Danger: Kya aap sabhi official actual scores clear karna chahte hain?")) {
+            actualScores = {};
+            localStorage.removeItem('wc_actual_scores');
+            renderAdminMatches();
+            renderUserMatches();
+            calculatePointsAndRenderLeaderboard();
+            alert("Official scores reset ho gaye!");
+        }
+    }
+
+    function downloadJsonFile() {
+        if(!isLocked) savePredictions(); 
+        const userName = document.getElementById('username').value || "Player";
+        const dataToExport = { username: userName, predictions: predictions };
+        const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${userName}_WorldCup_Predictions.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function calculateUploadedFile(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                const userPreds = data.predictions;
+                let total = 0;
+                matchesData.forEach(match => {
+                    total += calculateSingleMatchPoints(userPreds[match.id], actualScores[match.id]);
+                });
+                
+                const resDiv = document.getElementById('upload-result');
+                resDiv.style.display = "block";
+                resDiv.innerHTML = `<h3 style="color:var(--accent-green);">User: ${data.username}</h3>
+                                    <h2 style="color:var(--accent-gold); margin-top:5px;">Total Score: ${total} PTS</h2>`;
+            } catch(err) {
+                alert("Galat file format!");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function saveAdminScores() {
+        document.querySelectorAll('.act-home').forEach(input => {
+            const id = input.getAttribute('data-id');
+            if(!actualScores[id]) actualScores[id] = {};
+            actualScores[id].home = input.value;
+        });
+
+        document.querySelectorAll('.act-away').forEach(input => {
+            const id = input.getAttribute('data-id');
+            if(!actualScores[id]) actualScores[id] = {};
+            actualScores[id].away = input.value;
+        });
+
+        localStorage.setItem('wc_actual_scores', JSON.stringify(actualScores));
+        alert("Official Scores published successfully!");
+        renderUserMatches();
+        calculatePointsAndRenderLeaderboard();
+    }
+
+    function calculateSingleMatchPoints(pred, actual) {
+        if (!pred || !actual || pred.home === '' || pred.away === '' || actual.home === '' || actual.away === '') return 0;
+        const pH = parseInt(pred.home), pA = parseInt(pred.away);
+        const aH = parseInt(actual.home), aA = parseInt(actual.away);
+
+        if (pH === aH && pA === aA) return 5; // Exact Score
+
+        const predOutcome = pH > pA ? 'W' : (pH < pA ? 'L' : 'D');
+        const actualOutcome = aH > aA ? 'W' : (aH < aA ? 'L' : 'D');
+        if (predOutcome === actualOutcome) return 2; // Correct Outcome
+
+        return 0;
+    }
+
+    function calculatePointsAndRenderLeaderboard() {
+        let totalPoints = 0;
+        matchesData.forEach(match => {
+            totalPoints += calculateSingleMatchPoints(predictions[match.id], actualScores[match.id]);
+        });
+        document.getElementById('board-total-pts').innerText = totalPoints;
+    }
+
+    function exportToPNG() {
+        const userName = document.getElementById('username').value || 'Player';
+        const captureArea = document.getElementById('capture-area');
+        const snapHeader = document.getElementById('snap-header');
+        const snapUserTitle = document.getElementById('snap-user-title');
+
+        snapUserTitle.innerText = `🏆 ${userName}'s Predictor Board`;
+        snapHeader.style.display = 'block';
+
+        html2canvas(captureArea, { backgroundColor: '#0b0f19', scale: 2 }).then(canvas => {
+            snapHeader.style.display = 'none';
+            const imageURL = canvas.toDataURL("image/png");
+            const downloadLink = document.createElement('a');
+            downloadLink.href = imageURL;
+            downloadLink.download = `${userName}_wc_dashboard.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }).catch(err => {
+            snapHeader.style.display = 'none';
+        });
+    }
+</script>
+</body>
+</html>
